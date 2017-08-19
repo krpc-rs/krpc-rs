@@ -36,7 +36,9 @@ impl Stream {
         let mut v = vec!();
         v.push(buf);
         println!("a");
-        let response = self.rpc.invoke("KRPC", "AddStream", v)?;
+        let response =
+            if let Some(i) = self.rpc.invoke("KRPC", "AddStream", v)? { i }
+            else { return Err(TransceiverError::ResponseHasError("No id".to_owned())) };
         println!("a");
         let id = from_bytes!(varint32, &response)?;
         println!("a");
@@ -47,7 +49,7 @@ impl Stream {
         to_bytes!(varint, id as u64, &mut v)?;
         self.rpc.invoke("KRPC", "RemoveStream", vec!()).map(|_| ())
     }
-    pub unsafe fn receive(&mut self) -> Result<BTreeMap<u32, Vec<u8>>, TransceiverError> {
+    pub unsafe fn receive(&mut self) -> Result<BTreeMap<u32, Option<Vec<u8>>>, TransceiverError> {
         let mut buf = vec!();
         self.socket.read_to_end(&mut buf)?;
         let message : StreamMessage = from_bytes!(StreamMessage, &buf)?;

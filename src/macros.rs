@@ -42,10 +42,8 @@ macro_rules! make_request {
 macro_rules! unwrap_response {
     ($response : expr) => {
         match $response {
-            Response { has_error : None, return_value : Some(i), .. } |
-            Response { has_error : Some(false), return_value : Some(i), .. } => Ok(i.to_vec()),
             Response { has_error : Some(true), error : Some(e), ..} => Err(TransceiverError::ResponseHasError(e.to_string())),
-            _ => {Err(TransceiverError::ResponseHasError("EMPTY".to_owned()))}
+            Response { return_value : r, .. } => Ok(r.map(|i| i.to_vec()))
         }
     }
 }

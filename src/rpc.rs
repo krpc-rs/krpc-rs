@@ -42,7 +42,7 @@ impl Rpc {
         })
     }
     pub fn send(&mut self, r : Request) -> Result<(), ProtobufError> { Writer::new(&mut self.socket).write_message(&r) }
-    pub fn receive<'a>(&'a mut self) -> Result<Vec<u8>, TransceiverError> {
+    pub fn receive<'a>(&'a mut self) -> Result<Option<Vec<u8>>, TransceiverError> {
 
         const BUFFER_SIZE : usize = 4 * 1024 * 1024;
 
@@ -67,7 +67,7 @@ impl Rpc {
         let r = unwrap_response!(message);
         r
     }
-    pub fn invoke(&mut self, service : &str, procedure : &str, args : Vec<Vec<u8>>) -> Result<Vec<u8>, TransceiverError> {
+    pub fn invoke(&mut self, service : &str, procedure : &str, args : Vec<Vec<u8>>) -> Result<Option<Vec<u8>>, TransceiverError> {
         let request = make_request!(service, procedure, args);
         self.send(request)?;
         self.receive()
