@@ -3,16 +3,16 @@ use super::schema::*;
 
 use std::io::prelude::*;
 use std::net::*;
+use protobuf::*;
 
-use quick_protobuf::{BytesReader, Writer};
+//use quick_protobuf::{BytesReader, Writer};
 
 static RPC_HELLO_MESSAGE : [u8; 12] = [0x48, 0x45, 0x4C, 0x4C, 0x4F, 0x2D, 0x52, 0x50, 0x43, 0x00, 0x00, 0x00];
 
 #[derive(Debug)]
 pub struct Rpc {
     pub id : Id,
-    socket: TcpStream,
-    buffer : Vec<u8>
+    socket: TcpStream
 }
 
 impl Rpc {
@@ -37,37 +37,31 @@ impl Rpc {
         };
         Ok(Self {
             id : id,
-            socket : socket,
-            buffer : vec!()
+            socket : socket
         })
     }
-    pub fn send(&mut self, r : Request) -> Result<(), ProtobufError> { Writer::new(&mut self.socket).write_message(&r) }
+    pub fn send(&mut self, r : Request) -> Result<(), ProtobufError> { r.write_length_delimited_to_writer(&mut self.socket) }
     pub fn receive<'a>(&'a mut self) -> Result<Option<Vec<u8>>, TransceiverError> {
-
         const BUFFER_SIZE : usize = 4 * 1024 * 1024;
+        let mut buffer = vec!(0; BUFFER_SIZE);
 
-        self.buffer.resize(4 * 1024 * 1024, 0);
         let mut last_buf = 0;
         let mut total = 0;
         // Poll the socket
-        while last_buf == 0 { last_buf = unwrap_ret!(self.socket.read(&mut self.buffer), TransceiverError::Socket) };
+        while last_buf == 0 { last_buf = unwrap_ret!(self.socket.read(&mut buffer), TransceiverError::Socket) };
         total += last_buf;
         // Resize as appropriate
         while last_buf == BUFFER_SIZE {
-            &self.buffer.resize(total + BUFFER_SIZE, 0);
-            last_buf = unwrap_ret!(self.socket.read(&mut self.buffer[total..]), TransceiverError::Socket);
+            &buffer.resize(total + BUFFER_SIZE, 0);
+            last_buf = unwrap_ret!(self.socket.read(&mut buffer[total..]), TransceiverError::Socket);
             total += last_buf;
         }
-        &self.buffer.resize(total, 0);
+        &buffer.resize(total, 0);
 
-        let mut r : BytesReader = BytesReader::from_bytes(&self.buffer);
-
-        let message = r.read_message(&self.buffer, Response::from_reader)?;
-
-        let r = unwrap_response!(message);
-        r
+        let message = parse_length_delimited_from_bytes::<Response>(&buffer)?;
+        unwrap_response!(message)
     }
-    pub fn invoke(&mut self, service : &str, procedure : &str, args : Vec<Vec<u8>>) -> Result<Option<Vec<u8>>, TransceiverError> {
+    pub fn invoke(&mut self, service : String, procedure : String, args : Vec<Vec<u8>>) -> Result<Option<Vec<u8>>, TransceiverError> {
         let request = make_request!(service, procedure, args);
         self.send(request)?;
         self.receive()

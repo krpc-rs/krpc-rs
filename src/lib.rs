@@ -1,6 +1,6 @@
-extern crate quick_protobuf;
+extern crate protobuf;
 
-use quick_protobuf::errors::Error as ProtobufError;
+use protobuf::error::ProtobufError;
 use std::io::Error as IoError;
 
 #[derive(Debug)]
@@ -30,3 +30,14 @@ mod macros;
 pub mod schema;
 pub mod rpc;
 pub mod stream;
+
+#[macro_export]
+macro_rules! invoke {
+    ( $rpc : ident.$a : tt.$b : tt ( $( $arg : expr ),* ) ) => {{
+        let mut args = vec!();
+        $(
+            args.push($arg);
+        )*
+        rpc.invoke(stringify!($a).to_owned(), stringify!($b).to_owned(), args)
+    }}
+}

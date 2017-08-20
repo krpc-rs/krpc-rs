@@ -1,5 +1,5 @@
 //! This module doesn't seem to work yet
-
+/*
 use super::*;
 use super::schema::*;
 use super::rpc::*;
@@ -62,3 +62,4 @@ impl Stream {
         Ok(ret)
     }
 }
+*/

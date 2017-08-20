@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! proto {
-    ($s : expr) => { Some(::std::borrow::Cow::Borrowed($s)) }
+    ($s : expr) => { ::std::borrow::Cow::Borrowed($s) }
 }
 
 #[macro_export]
@@ -28,22 +28,24 @@ macro_rules! from_bytes {
 #[macro_export]
 macro_rules! make_request {
     ($service : expr, $procedure : expr, $args : expr) => {{
-        let mut request = Request {
-           service : proto!($service),
-           procedure : proto!($procedure),
-           arguments : vec!()
-       };
-       for i in 0 .. $args.len() { request.arguments.push(Argument { position : Some(i as _), value : proto!(&$args[i]) }) }
-       request
+        let mut request : Request = Request::new();
+        request.set_service($service);
+        request.set_procedure($procedure);
+        for i in 0 .. $args.len() {
+            let mut arg = Argument::new();
+            arg.set_position(i as u32);
+            arg.set_value($args[i].clone());
+            request.arguments.push(arg);
+        }
+        request
    }}
 }
 
 #[macro_export]
 macro_rules! unwrap_response {
-    ($response : expr) => {
-        match $response {
-            Response { has_error : Some(true), error : Some(e), ..} => Err(TransceiverError::ResponseHasError(e.to_string())),
-            Response { return_value : r, .. } => Ok(r.map(|i| i.to_vec()))
-        }
-    }
+    ($response : expr) => {{
+        if $response.has_error { Err(TransceiverError::ResponseHasError($response.error)) }
+        else if $response.has_return_value { Ok(Some($response.return_value)) }
+        else { Ok(None) }
+    }}
 }
