@@ -42,23 +42,20 @@ impl Rpc {
     }
     pub fn send(&mut self, r : Request) -> Result<(), ProtobufError> { r.write_length_delimited_to_writer(&mut self.socket) }
     pub fn receive<'a>(&'a mut self) -> Result<Option<Vec<u8>>, TransceiverError> {
-        const BUFFER_SIZE : usize = 4 * 1024 * 1024;
-        let mut buffer = vec!(0; BUFFER_SIZE);
-
-        let mut last_buf = 0;
-        let mut total = 0;
-        // Poll the socket
-        while last_buf == 0 { last_buf = unwrap_ret!(self.socket.read(&mut buffer), TransceiverError::Socket) };
-        total += last_buf;
-        // Resize as appropriate
-        while last_buf == BUFFER_SIZE {
-            &buffer.resize(total + BUFFER_SIZE, 0);
-            last_buf = unwrap_ret!(self.socket.read(&mut buffer[total..]), TransceiverError::Socket);
-            total += last_buf;
+        let mut len = 0;
+        {
+            let ref mut buf = [0];
+            let mut i = 0;
+            loop {
+                self.socket.read_exact(buf)?;
+                len += ((buf[0] & 0b01111111) as usize) << i;
+                if buf[0] & 0b10000000 == 0 { break }
+                i += 1;
+            }
         }
-        &buffer.resize(total, 0);
-
-        let message = parse_length_delimited_from_bytes::<Response>(&buffer)?;
+        let mut buffer = vec!(0; len);
+        self.socket.read_exact(&mut buffer)?;
+        let message = parse_from_bytes::<Response>(&buffer)?;
         unwrap_response!(message)
     }
     pub fn invoke(&mut self, service : String, procedure : String, args : Vec<Vec<u8>>) -> Result<Option<Vec<u8>>, TransceiverError> {

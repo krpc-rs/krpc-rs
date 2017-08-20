@@ -1,6 +1,6 @@
 [package]
 name = "krpc-rs"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Cyclic3 <>"]
 description = "The basic types for communicating with the Kerbal Space Program Remote Procedure Calls mod, implemented in rust"
 documentation = "https://docs.rs/krpc-rs"

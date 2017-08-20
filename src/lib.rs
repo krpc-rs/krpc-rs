@@ -33,11 +33,12 @@ pub mod stream;
 
 #[macro_export]
 macro_rules! invoke {
-    ( $rpc : ident.$a : tt.$b : tt ( $( $arg : expr ),* ) ) => {{
+    ( $rpc : ident.$a : tt.$b : tt () ) => { $rpc.invoke(stringify!($a).to_owned(), stringify!($b).to_owned(), vec!()) };
+    ( $rpc : ident.$a : tt.$b : tt ( $( $arg : expr ),+ ) ) => {{
         let mut args = vec!();
         $(
             args.push($arg);
-        )*
-        rpc.invoke(stringify!($a).to_owned(), stringify!($b).to_owned(), args)
+        )+
+        $rpc.invoke(stringify!($a).to_owned(), stringify!($b).to_owned(), args)
     }}
 }
