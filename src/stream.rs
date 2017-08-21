@@ -1,5 +1,3 @@
-//! This module doesn't seem to work yet
-
 use super::*;
 use super::schema::*;
 use super::rpc::*;
@@ -56,7 +54,7 @@ impl Stream {
                 self.socket.read_exact(buf)?;
                 len += ((buf[0] & 0b01111111) as usize) << i;
                 if buf[0] & 0b10000000 == 0 { break }
-                i += 1;
+                i += 7;
             }
         }
         let mut buffer = vec!(0; len);

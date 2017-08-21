@@ -50,7 +50,7 @@ impl Rpc {
                 self.socket.read_exact(buf)?;
                 len += ((buf[0] & 0b01111111) as usize) << i;
                 if buf[0] & 0b10000000 == 0 { break }
-                i += 1;
+                i += 7;
             }
         }
         let mut buffer = vec!(0; len);
