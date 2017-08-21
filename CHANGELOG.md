@@ -1,6 +1,9 @@
 # Changelog
 
-##[0.3.1] - 2017/08/21
+## [0.3.2] - 2017/08/21
+
+
+## [0.3.1] - 2017/08/21
 ### Fixed
  - Responses over 127 bytes in length would be truncated, as the increment in the size of the bitshift in the varint decoding was `1`, not `7`
  - Removed comment that indicated that streams didn't work at all

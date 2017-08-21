@@ -29,7 +29,7 @@ impl Stream {
     }
     pub fn add_stream(&mut self, service : String, procedure : String, args : Vec<Vec<u8>>) -> Result<u32, TransceiverError> {
         let mut buf = vec!();
-        let mut request : Request = make_request!(service, procedure, args);
+        let request : Request = make_request!(service, procedure, args);
         request.write_to_vec(&mut buf)?;
         let mut v = vec!();
         v.push(buf);
